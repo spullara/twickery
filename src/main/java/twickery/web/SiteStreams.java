@@ -140,8 +140,8 @@ public class SiteStreams implements ServletContextListener {
     final String[] auth = new String[2];
     Set<String> uids = redis(new Function<Jedis, Set<String>>() {
       public Set<String> apply(Jedis jedis) {
-        auth[0] = jedis.hget("twitter:uid:668473", "oauth_token");
-        auth[1] = jedis.hget("twitter:uid:668473", "oauth_token_secret");
+        auth[0] = jedis.hget("twitter:uid:378853703", "oauth_token");
+        auth[1] = jedis.hget("twitter:uid:378853703", "oauth_token_secret");
         return jedis.smembers("twitter:uids");
       }
     });
