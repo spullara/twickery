@@ -5,6 +5,10 @@
 <web-app>
   <display-name>Twickery</display-name>
 
+  <listener>
+    <listener-class>twickery.web.SiteStreams</listener-class>
+  </listener>
+
   <servlet>
     <servlet-name>Web</servlet-name>
     <servlet-class>twickery.web.Router</servlet-class>
@@ -14,4 +18,5 @@
     <servlet-name>Web</servlet-name>
     <url-pattern>/*</url-pattern>
   </servlet-mapping>
+  
 </web-app>

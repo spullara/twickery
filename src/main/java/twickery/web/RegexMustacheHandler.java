@@ -21,11 +21,11 @@ import com.sampullara.mustache.Scope;
 * Time: 1:35 PM
 * To change this template use File | Settings | File Templates.
 */
-public class RegexMustacheHandler implements Function<HttpServletRequest, Matcher>, Router.Handler<Matcher> {
+public class RegexMustacheHandler implements Function<HttpServletRequest, Matcher>, Handler<Matcher> {
 
   private Pattern pattern;
   private Mustache mustache;
-  private Router.Scoper<Matcher> makeScope;
+  private Scoper<Matcher> makeScope;
   private static MustacheJava mj = new MustacheBuilder("templates");
 
   public RegexMustacheHandler(String pattern, String template) throws ServletException {
@@ -37,7 +37,7 @@ public class RegexMustacheHandler implements Function<HttpServletRequest, Matche
     }
   }
 
-  public RegexMustacheHandler(String pattern, String template, Router.Scoper<Matcher> makeScope) throws ServletException {
+  public RegexMustacheHandler(String pattern, String template, Scoper<Matcher> makeScope) throws ServletException {
     this(pattern, template);
     this.makeScope = makeScope;
   }
