@@ -1,6 +1,6 @@
 www:
   type: java
-  approot: out/artifacts
+  approot: webapp
 
 data:
   type: redis
