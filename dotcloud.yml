@@ -1,0 +1,6 @@
+www:
+  type: java
+  approot: out/artifacts
+
+data:
+  type: redis
