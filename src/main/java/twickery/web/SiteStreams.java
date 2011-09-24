@@ -1,14 +1,14 @@
 package twickery.web;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.StringTokenizer;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -29,12 +29,22 @@ import twitter4j.User;
 import twitter4j.UserList;
 import twitter4j.auth.AccessToken;
 
+import static java.net.URLEncoder.encode;
 import static twickery.web.Twickery.redis;
 
 /**
  * Listen to site streams from twitter for our users
  */
 public class SiteStreams implements ServletContextListener {
+  private static final String FAVORITE_API = "https://graph.facebook.com/me/twickery:favorite";
+  private static final String FOLLOW_API = "https://graph.facebook.com/me/twickery:follow";
+
+  // We don't really need these yet
+  private static final String TWEET_API = "https://graph.facebook.com/me/twickery:tweet";
+  private static final String RETWEET_API = "https://graph.facebook.com/me/twickery:retweet";
+
+  private static final String TWEET = "tweet";
+
   private JsonFactory jf = new MappingJsonFactory();
   private TwitterStream twitterStream;
 
@@ -58,32 +68,20 @@ public class SiteStreams implements ServletContextListener {
         System.out.println(l + ": " + Arrays.toString(longs));
       }
 
-      public void onFavorite(long l, final User user, User user1, final Status status) {
+      public void onFavorite(long l, final User source, User target, final Status status) {
         System.out.print("onFavorite" + " ");
-        System.out.println(l + ": " + user + " " + user1 + " " + status);
+        System.out.println(l + ": " + source + " " + target + " " + status);
         Twickery.redis(new Function<Jedis, String>() {
           public String apply(Jedis jedis) {
             try {
-              String twitterId = String.valueOf(user.getId());
-              String facebookId = jedis.hget("twitter:uid:" + twitterId, "facebook");
+              String facebookId = jedis.hget("twitter:uid:" + source.getId(), "facebook");
               if (facebookId != null) {
                 String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
                 if (access_token != null) {
-                  String statusUrl = URLEncoder.encode("http://www.twickery.com/tweet/" + status.getId(), "utf-8");
-                  final String form = "access_token=" +
-                          URLEncoder.encode(access_token, "utf-8") + "&tweet=" + statusUrl;
-                  URL url = new URL("https://graph.facebook.com/me/twickery:favorite");
-                  System.out.println(form);
-                  HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-                  urlc.setDoOutput(true);
-                  OutputStream outputStream = urlc.getOutputStream();
-                  outputStream.write(form.getBytes("utf-8"));
-                  outputStream.flush();
-                  JsonNode jsonNode = jf.createJsonParser(urlc.getInputStream()).readValueAsTree();
-                  System.out.println(jsonNode);
+                  post(FAVORITE_API, form(access_token, TWEET, tweet(status)));
                 }
               }
-              return null;  //To change body of implemented methods use File | Settings | File Templates.
+              return null;
             } catch (Exception e) {
               e.printStackTrace();
               return null;
@@ -97,9 +95,26 @@ public class SiteStreams implements ServletContextListener {
         System.out.println(l + ": " + user + " " + user1 + " " + status);
       }
 
-      public void onFollow(long l, User user, User user1) {
+      public void onFollow(long l, final User source, final User target) {
         System.out.print("onFollow" + " ");
-        System.out.println(l + ": " + user + " " + user1);
+        System.out.println(l + ": " + source + " " + target);
+        Twickery.redis(new Function<Jedis, String>() {
+          public String apply(Jedis jedis) {
+            try {
+              String facebookId = jedis.hget("twitter:uid:" + source.getId(), "facebook");
+              if (facebookId != null) {
+                String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
+                if (access_token != null) {
+                  post(FOLLOW_API, form(access_token, TWEET, user(target)));
+                }
+              }
+              return null;
+            } catch (Exception e) {
+              e.printStackTrace();
+              return null;
+            }
+          }
+        });
       }
 
       public void onUnfollow(long l, User user, User user1) {
@@ -187,6 +202,31 @@ public class SiteStreams implements ServletContextListener {
       array[j] = Long.parseLong(i.next());
     }
     twitterStream.site(false, array);
+  }
+
+  private String tweet(Status status) throws UnsupportedEncodingException {
+    return encode("http://www.twickery.com/tweet/" + status.getId(), "utf-8");
+  }
+
+  private String user(User user) throws UnsupportedEncodingException {
+    return encode("http://www.twickery.com/user/" + user.getId(), "utf-8");
+  }
+
+  private String form(String access_token, String entityType, String entityUrl) throws UnsupportedEncodingException {
+    return "access_token=" +
+                            URLEncoder.encode(access_token,
+                                    "utf-8") + "&" + entityType + "=" + entityUrl;
+  }
+
+  private void post(String api, String form) throws IOException {
+    URL url = new URL(api);
+    HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+    urlc.setDoOutput(true);
+    OutputStream outputStream = urlc.getOutputStream();
+    outputStream.write(form.getBytes("utf-8"));
+    outputStream.flush();
+    JsonNode jsonNode = jf.createJsonParser(urlc.getInputStream()).readValueAsTree();
+    System.out.println(jsonNode);
   }
 
   public void contextDestroyed(ServletContextEvent servletContextEvent) {

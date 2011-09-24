@@ -12,4 +12,16 @@ public class UserCode {
   String name() {
     return user.getName();
   }
+
+  String screen_name() {
+    return user.getScreenName();
+  }
+
+  String image() {
+    return user.getProfileImageURL().toString();
+  }
+
+  String description() {
+    return user.getDescription();
+  }
 }

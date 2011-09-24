@@ -17,6 +17,9 @@ import twickery.web.handler.TwitterCallbackHandler;
 import twickery.web.handler.TwitterConnectHandler;
 import twickery.web.page.IndexPageScoper;
 import twickery.web.page.TweetPageScoper;
+import twickery.web.page.UserPageScoper;
+
+import twitter4j.User;
 
 import static java.lang.Integer.parseInt;
 
@@ -38,6 +41,7 @@ public class Router extends HttpServlet {
 
     add(new RegexMustacheHandler("/", "index.html", new IndexPageScoper()));
     add(new RegexMustacheHandler("/tweet/([0-9]+)", "tweet.html", new TweetPageScoper()));
+    add(new RegexMustacheHandler("/user/([a-zA-Z0-9]+)", "user.html", new UserPageScoper()));
     handlerMap.put(new SimpleMatcher("/twitter/oauth"), new TwitterCallbackHandler());
     handlerMap.put(new SimpleMatcher("/twitter/connect"), new TwitterConnectHandler());
     handlerMap.put(new SimpleMatcher("/facebook/oauth"), new FacebookCallbackHandler());

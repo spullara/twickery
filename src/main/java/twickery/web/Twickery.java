@@ -43,6 +43,10 @@ public class Twickery {
       String host = env.get("DOTCLOUD_DATA_REDIS_HOST").getTextValue();
       int port = parseInt(env.get("DOTCLOUD_DATA_REDIS_PORT").getTextValue());
       String password = env.get("DOTCLOUD_DATA_REDIS_PASSWORD").getTextValue();
+      config.testWhileIdle = true;
+      config.minEvictableIdleTimeMillis = 60000;
+      config.timeBetweenEvictionRunsMillis = 30000;
+      config.numTestsPerEvictionRun = -1;
       pool = new JedisPool(config, host, port, 60, password);
       twitterFactory = new TwitterFactory();
       salt = CharStreams.readLines(
