@@ -28,6 +28,10 @@ public class TwitterCallbackHandler implements Handler<Matcher> {
     RequestToken requestToken = (RequestToken) request.getSession().getAttribute("requestToken");
     String verifier = request.getParameter("oauth_verifier");
     try {
+      if (verifier == null || requestToken == null) {
+        response.sendRedirect("http://www.twickery.com/");
+        return;
+      }
       final AccessToken token = twitter.getOAuthAccessToken(requestToken, verifier);
       request.getSession().removeAttribute("requestToken");
       final User user = twitter.verifyCredentials();

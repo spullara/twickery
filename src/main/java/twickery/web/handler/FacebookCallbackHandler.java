@@ -54,12 +54,13 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
           }
         }
       }
-      if (twitterId == null) {
+      String codeParam = request.getParameter("code");
+      if (twitterId == null || codeParam == null) {
         response.sendRedirect("http://www.twickery.com/twitter/connect");
         return;
       }
 
-      String code = encode(request.getParameter("code"), "utf-8");
+      String code = encode(codeParam, "utf-8");
       URL url = new URL("https://graph.facebook.com/oauth/access_token" +
               "?client_id=" + fbprops.getProperty("client_id") +
               "&client_secret=" + fbprops.getProperty("client_secret") +
