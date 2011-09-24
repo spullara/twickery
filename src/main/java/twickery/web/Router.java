@@ -11,12 +11,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Function;
 
-import redis.clients.jedis.JedisPool;
-import twickery.web.handler.CallbackHandler;
-import twickery.web.handler.ConnectHandler;
+import twickery.web.handler.FacebookCallbackHandler;
+import twickery.web.handler.FacebookConnectHandler;
+import twickery.web.handler.TwitterCallbackHandler;
+import twickery.web.handler.TwitterConnectHandler;
+import twickery.web.page.IndexPageScoper;
 import twickery.web.page.TweetPageScoper;
-
-import twitter4j.TwitterFactory;
 
 import static java.lang.Integer.parseInt;
 
@@ -36,10 +36,12 @@ public class Router extends HttpServlet {
   public void init() throws ServletException {
     System.setProperty("mustache.debug", "true");
 
-    add(new RegexMustacheHandler("/", "index.html"));
+    add(new RegexMustacheHandler("/", "index.html", new IndexPageScoper()));
     add(new RegexMustacheHandler("/tweet/([0-9]+)", "tweet.html", new TweetPageScoper()));
-    handlerMap.put(new SimpleMatcher("/twitter/oauth"), new CallbackHandler());
-    handlerMap.put(new SimpleMatcher("/twitter/connect"), new ConnectHandler());
+    handlerMap.put(new SimpleMatcher("/twitter/oauth"), new TwitterCallbackHandler());
+    handlerMap.put(new SimpleMatcher("/twitter/connect"), new TwitterConnectHandler());
+    handlerMap.put(new SimpleMatcher("/facebook/oauth"), new FacebookCallbackHandler());
+    handlerMap.put(new SimpleMatcher("/facebook/connect"), new FacebookConnectHandler());
   }
 
   @Override
