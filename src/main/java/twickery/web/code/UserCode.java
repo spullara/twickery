@@ -22,6 +22,6 @@ public class UserCode {
   }
 
   String description() {
-    return user.getDescription();
+    return user.getDescription().replace("\n", " ");
   }
 }

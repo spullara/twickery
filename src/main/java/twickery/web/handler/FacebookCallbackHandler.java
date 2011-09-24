@@ -22,6 +22,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.MappingJsonFactory;
 import redis.clients.jedis.Jedis;
 import twickery.web.Handler;
+import twickery.web.SiteStreams;
 import twickery.web.Twickery;
 
 import twitter4j.Twitter;
@@ -43,10 +44,17 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
   public void handle(HttpServletRequest request, HttpServletResponse response, Matcher matcher) throws ServletException {
     try {
       String twitterId = null;
-      for (Cookie cookie : request.getCookies()) {
-        if (cookie.getName().equals("twitter")) {
-          twitterId = Twickery.decode(cookie.getValue());
+      final Cookie[] cookies = request.getCookies();
+      if (cookies != null) {
+        for (Cookie cookie : cookies) {
+          if (cookie.getName().equals("twitter")) {
+            twitterId = Twickery.decode(cookie.getValue());
+          }
         }
+      }
+      if (twitterId == null) {
+        response.sendRedirect("http://www.twickery.com/twitter/connect");
+        return;
       }
 
       String client_id = fbprops.getProperty("client_id");
@@ -85,6 +93,7 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
       facebookCookie.setMaxAge(_20_YEARS);
       response.addCookie(facebookCookie);
       response.sendRedirect("http://www.twickery.com/");
+      SiteStreams.restart();
     } catch (Exception e) {
       throw new ServletException(e);
     }

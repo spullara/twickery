@@ -36,19 +36,29 @@ import static twickery.web.Twickery.redis;
  * Listen to site streams from twitter for our users
  */
 public class SiteStreams implements ServletContextListener {
-  private static final String FAVORITE_API = "https://graph.facebook.com/me/twickery:favorite";
-  private static final String FOLLOW_API = "https://graph.facebook.com/me/twickery:follow";
+  private static final String FAVORITE_ACTION = "https://graph.facebook.com/me/twickery:favorite";
+  private static final String FOLLOW_ACTION = "https://graph.facebook.com/me/twickery:follow";
 
   // We don't really need these yet
-  private static final String TWEET_API = "https://graph.facebook.com/me/twickery:tweet";
-  private static final String RETWEET_API = "https://graph.facebook.com/me/twickery:retweet";
+  private static final String TWEET_ACTION = "https://graph.facebook.com/me/twickery:tweet";
+  private static final String RETWEET_ACTION = "https://graph.facebook.com/me/twickery:retweet";
 
-  private static final String TWEET = "tweet";
+  private static final String TWEET_OBJECT = "tweet";
+  private static final String USER_OBJECT = "user";
 
-  private JsonFactory jf = new MappingJsonFactory();
-  private TwitterStream twitterStream;
+  private static JsonFactory jf = new MappingJsonFactory();
+  private static TwitterStream twitterStream;
+
+  public static void restart() {
+    stop();
+    start();
+  }
 
   public void contextInitialized(ServletContextEvent servletContextEvent) {
+    start();
+  }
+
+  private static void start() {
     System.out.println("Connecting to Site Stream");
     TwitterStreamFactory tsf = new TwitterStreamFactory();
     twitterStream = tsf.getInstance();
@@ -78,7 +88,7 @@ public class SiteStreams implements ServletContextListener {
               if (facebookId != null) {
                 String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
                 if (access_token != null) {
-                  post(FAVORITE_API, form(access_token, TWEET, tweet(status)));
+                  post(FAVORITE_ACTION, form(access_token, TWEET_OBJECT, tweet(status)));
                 }
               }
               return null;
@@ -105,7 +115,7 @@ public class SiteStreams implements ServletContextListener {
               if (facebookId != null) {
                 String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
                 if (access_token != null) {
-                  post(FOLLOW_API, form(access_token, TWEET, user(target)));
+                  post(FOLLOW_ACTION, form(access_token, USER_OBJECT, user(target)));
                 }
               }
               return null;
@@ -204,21 +214,22 @@ public class SiteStreams implements ServletContextListener {
     twitterStream.site(false, array);
   }
 
-  private String tweet(Status status) throws UnsupportedEncodingException {
+  private static String tweet(Status status) throws UnsupportedEncodingException {
     return encode("http://www.twickery.com/tweet/" + status.getId(), "utf-8");
   }
 
-  private String user(User user) throws UnsupportedEncodingException {
-    return encode("http://www.twickery.com/user/" + user.getId(), "utf-8");
+  private static String user(User user) throws UnsupportedEncodingException {
+    return encode("http://www.twickery.com/user/" + user.getScreenName(), "utf-8");
   }
 
-  private String form(String access_token, String entityType, String entityUrl) throws UnsupportedEncodingException {
+  private static String form(String access_token, String entityType, String entityUrl) throws UnsupportedEncodingException {
     return "access_token=" +
                             URLEncoder.encode(access_token,
                                     "utf-8") + "&" + entityType + "=" + entityUrl;
   }
 
-  private void post(String api, String form) throws IOException {
+  private static void post(String api, String form) throws IOException {
+    System.out.println(api + "?" + form);
     URL url = new URL(api);
     HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
     urlc.setDoOutput(true);
@@ -230,6 +241,10 @@ public class SiteStreams implements ServletContextListener {
   }
 
   public void contextDestroyed(ServletContextEvent servletContextEvent) {
+    stop();
+  }
+
+  private static void stop() {
     twitterStream.shutdown();
   }
 }
