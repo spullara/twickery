@@ -1,15 +1,22 @@
 package twickery.web;
 
-import java.util.ArrayList;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.StringTokenizer;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.MappingJsonFactory;
 import redis.clients.jedis.Jedis;
 
 import twitter4j.DirectMessage;
@@ -22,15 +29,13 @@ import twitter4j.User;
 import twitter4j.UserList;
 import twitter4j.auth.AccessToken;
 
-import static com.google.common.collect.Iterables.isEmpty;
-import static com.google.common.collect.Iterables.transform;
 import static twickery.web.Twickery.redis;
 
 /**
  * Listen to site streams from twitter for our users
  */
 public class SiteStreams implements ServletContextListener {
-
+  private JsonFactory jf = new MappingJsonFactory();
   private TwitterStream twitterStream;
 
   public void contextInitialized(ServletContextEvent servletContextEvent) {
@@ -50,12 +55,41 @@ public class SiteStreams implements ServletContextListener {
 
       public void onFriendList(long l, long[] longs) {
         System.out.print("onFriendList" + " ");
-        System.out.println(l + ": " + longs);
+        System.out.println(l + ": " + Arrays.toString(longs));
       }
 
-      public void onFavorite(long l, User user, User user1, Status status) {
+      public void onFavorite(long l, final User user, User user1, final Status status) {
         System.out.print("onFavorite" + " ");
         System.out.println(l + ": " + user + " " + user1 + " " + status);
+        Twickery.redis(new Function<Jedis, String>() {
+          public String apply(Jedis jedis) {
+            try {
+              String twitterId = String.valueOf(user.getId());
+              String facebookId = jedis.hget("twitter:uid:" + twitterId, "facebook");
+              if (facebookId != null) {
+                String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
+                if (access_token != null) {
+                  String statusUrl = URLEncoder.encode("http://www.twickery.com/tweet/" + status.getId(), "utf-8");
+                  final String form = "access_token=" +
+                          URLEncoder.encode(access_token, "utf-8") + "&tweet=" + statusUrl;
+                  URL url = new URL("https://graph.facebook.com/me/twickery:favorite");
+                  System.out.println(form);
+                  HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+                  urlc.setDoOutput(true);
+                  OutputStream outputStream = urlc.getOutputStream();
+                  outputStream.write(form.getBytes("utf-8"));
+                  outputStream.flush();
+                  JsonNode jsonNode = jf.createJsonParser(urlc.getInputStream()).readValueAsTree();
+                  System.out.println(jsonNode);
+                }
+              }
+              return null;  //To change body of implemented methods use File | Settings | File Templates.
+            } catch (Exception e) {
+              e.printStackTrace();
+              return null;
+            }
+          }
+        });
       }
 
       public void onUnfavorite(long l, User user, User user1, Status status) {

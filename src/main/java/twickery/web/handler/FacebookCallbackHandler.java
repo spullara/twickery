@@ -71,9 +71,11 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
       JsonNode jsonNode = jf.createJsonParser(url).readValueAsTree();
       final String userId = jsonNode.get("id").getValueAsText();
       final String finalTwitterId = twitterId;
+      final String finalAccess_token = access_token;
       Twickery.redis(new Function<Jedis, Void>() {
         public Void apply(Jedis jedis) {
           jedis.hset("facebook:uid:" + userId, "twitter", finalTwitterId);
+          jedis.hset("facebook:uid:" + userId, "access_token", finalAccess_token);
           jedis.hset("twitter:uid:" + finalTwitterId, "facebook", userId);
           return null;
         }
