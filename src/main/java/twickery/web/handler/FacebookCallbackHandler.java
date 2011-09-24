@@ -30,6 +30,8 @@ import twitter4j.User;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 
+import static java.net.URLEncoder.encode;
+
 public class FacebookCallbackHandler implements Handler<Matcher> {
   private static final int _20_YEARS = 365 * 24 * 3600 * 20;
   private static JsonFactory jf = new MappingJsonFactory();
@@ -57,14 +59,11 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
         return;
       }
 
-      String client_id = fbprops.getProperty("client_id");
-      String client_secret = fbprops.getProperty("client_secret");
-      String redirect_uri = URLEncoder.encode("http://www.twickery.com/facebook/oauth", "utf-8");
-      String code = URLEncoder.encode(request.getParameter("code"), "utf-8");
+      String code = encode(request.getParameter("code"), "utf-8");
       URL url = new URL("https://graph.facebook.com/oauth/access_token" +
-              "?client_id=" + client_id +
-              "&client_secret=" + client_secret +
-              "&redirect_uri=" + redirect_uri +
+              "?client_id=" + fbprops.getProperty("client_id") +
+              "&client_secret=" + fbprops.getProperty("client_secret") +
+              "&redirect_uri=" + encode("http://www.twickery.com/facebook/oauth", "utf-8") +
               "&code=" + code);
       String result = CharStreams.toString(
               new BufferedReader(new InputStreamReader(url.openStream(), "utf-8")));
@@ -75,7 +74,7 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
           access_token = pair[1];
         }
       }
-      url = new URL("https://graph.facebook.com/me?access_token=" + URLEncoder.encode(access_token, "utf-8"));
+      url = new URL("https://graph.facebook.com/me?access_token=" + encode(access_token, "utf-8"));
       JsonNode jsonNode = jf.createJsonParser(url).readValueAsTree();
       final String userId = jsonNode.get("id").getValueAsText();
       final String finalTwitterId = twitterId;
