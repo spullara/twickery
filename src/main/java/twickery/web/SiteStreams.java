@@ -63,9 +63,30 @@ public class SiteStreams implements ServletContextListener {
     TwitterStreamFactory tsf = new TwitterStreamFactory();
     twitterStream = tsf.getInstance();
     twitterStream.addListener(new SiteStreamsListener() {
-      public void onStatus(long l, Status status) {
+      public void onStatus(long l, final Status status) {
         System.out.print("onStatus" + " ");
         System.out.println(l + ": " + status);
+        final long source = status.getUser().getId();
+        final Status retweetedStatus = status.getRetweetedStatus();
+        if (retweetedStatus != null) {
+          Twickery.redis(new Function<Jedis, String>() {
+            public String apply(Jedis jedis) {
+              try {
+                String facebookId = jedis.hget("twitter:uid:" + source, "facebook");
+                if (facebookId != null) {
+                  String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
+                  if (access_token != null) {
+                    post(RETWEET_ACTION, form(access_token, TWEET_OBJECT, tweet(retweetedStatus)));
+                  }
+                }
+                return null;
+              } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+              }
+            }
+          });
+        }
       }
 
       public void onDeletionNotice(long l, StatusDeletionNotice statusDeletionNotice) {

@@ -34,9 +34,13 @@ public class IndexPageScoper implements Scoper<Matcher> {
       final User user = Twickery.redis(new Function<Jedis, User>() {
         public User apply(Jedis jedis) {
           final Twitter t = Twickery.twitter();
-          t.setOAuthAccessToken(
-                  new AccessToken(jedis.hget("twitter:uid:" + finalTwitter, "oauth_token"),
-                          jedis.hget("twitter:uid:" + finalTwitter, "oauth_token_secret")));
+          final String oauth_token = jedis.hget("twitter:uid:" + finalTwitter, "oauth_token");
+          final String oauth_token_secret = jedis.hget("twitter:uid:" + finalTwitter,
+                  "oauth_token_secret");
+          if (oauth_token == null || oauth_token_secret == null) {
+            return null;
+          }
+          t.setOAuthAccessToken(new AccessToken(oauth_token, oauth_token_secret));
           try {
             return t.verifyCredentials();
           } catch (TwitterException e) {
