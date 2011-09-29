@@ -1,5 +1,6 @@
 package twickery.web;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -65,6 +66,11 @@ public class SiteStreams implements ServletContextListener {
   private static void start() {
     System.out.println("Connecting to Site Stream");
     Properties props = new Properties();
+    try {
+      props.load(SiteStreams.class.getClassLoader().getResourceAsStream("twitter4j.properties"));
+    } catch (IOException e) {
+      throw new AssertionError("Couldn't load twitter4j.properties");
+    }
     props.setProperty(PropertyConfiguration.SITE_STREAM_BASE_URL, "https://sitestream.twitter.com/2b/");
     TwitterStreamFactory tsf = new TwitterStreamFactory(new PropertyConfiguration(props));
     twitterStream = tsf.getInstance();
