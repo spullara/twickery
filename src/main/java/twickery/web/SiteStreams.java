@@ -1,6 +1,7 @@
 package twickery.web;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -8,6 +9,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -28,6 +30,8 @@ import twitter4j.TwitterStreamFactory;
 import twitter4j.User;
 import twitter4j.UserList;
 import twitter4j.auth.AccessToken;
+import twitter4j.conf.Configuration;
+import twitter4j.conf.PropertyConfiguration;
 
 import static java.net.URLEncoder.encode;
 import static twickery.web.Twickery.redis;
@@ -60,7 +64,9 @@ public class SiteStreams implements ServletContextListener {
 
   private static void start() {
     System.out.println("Connecting to Site Stream");
-    TwitterStreamFactory tsf = new TwitterStreamFactory();
+    Properties props = new Properties();
+    props.setProperty(PropertyConfiguration.SITE_STREAM_BASE_URL, "https://sitestream.twitter.com/2b/");
+    TwitterStreamFactory tsf = new TwitterStreamFactory(new PropertyConfiguration(props));
     twitterStream = tsf.getInstance();
     twitterStream.addListener(new SiteStreamsListener() {
       public void onStatus(long l, final Status status) {
