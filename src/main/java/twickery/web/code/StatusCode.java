@@ -33,7 +33,7 @@ public class StatusCode {
   }
 
   String image() {
-    return status.getUser().getProfileImageURL().toString();
+    return status.getUser().getProfileImageURL().toString().replace("normal", "reasonably_small");
   }
 
   String text() {
