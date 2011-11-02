@@ -53,6 +53,8 @@ public class Router extends HttpServlet {
     for (Map.Entry<Function<HttpServletRequest, Matcher>, Handler<Matcher>> handlerEntry : handlerMap.entrySet()) {
       Matcher matcher = handlerEntry.getKey().apply(req);
       if (matcher != null) {
+        resp.setCharacterEncoding("utf-8");
+        resp.setContentType("text/html");
         handlerEntry.getValue().handle(req, resp, matcher);
         return;
       }
