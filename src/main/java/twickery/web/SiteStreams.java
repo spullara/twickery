@@ -1,8 +1,6 @@
 package twickery.web;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -31,7 +29,6 @@ import twitter4j.TwitterStreamFactory;
 import twitter4j.User;
 import twitter4j.UserList;
 import twitter4j.auth.AccessToken;
-import twitter4j.conf.Configuration;
 import twitter4j.conf.PropertyConfiguration;
 
 import static java.net.URLEncoder.encode;
@@ -55,8 +52,21 @@ public class SiteStreams implements ServletContextListener {
   private static TwitterStream twitterStream;
 
   public static void restart() {
-    stop();
-    start();
+    boolean started = false;
+    do {
+      stop();
+      try {
+        start();
+        started = true;
+      } catch (Exception e) {
+        e.printStackTrace();
+        try {
+          Thread.sleep(10000);
+        } catch (InterruptedException ie) {
+          // ignore
+        }
+      }
+    } while (!started);
   }
 
   public void contextInitialized(ServletContextEvent servletContextEvent) {
@@ -71,7 +81,8 @@ public class SiteStreams implements ServletContextListener {
     } catch (IOException e) {
       throw new AssertionError("Couldn't load twitter4j.properties");
     }
-    props.setProperty(PropertyConfiguration.SITE_STREAM_BASE_URL, "https://sitestream.twitter.com/2b/");
+    props.setProperty(PropertyConfiguration.SITE_STREAM_BASE_URL,
+            "https://sitestream.twitter.com/2b/");
     TwitterStreamFactory tsf = new TwitterStreamFactory(new PropertyConfiguration(props));
     twitterStream = tsf.getInstance();
     twitterStream.addListener(new SiteStreamsListener() {
@@ -257,8 +268,8 @@ public class SiteStreams implements ServletContextListener {
 
   private static String form(String access_token, String entityType, String entityUrl) throws UnsupportedEncodingException {
     return "access_token=" +
-                            URLEncoder.encode(access_token,
-                                    "utf-8") + "&" + entityType + "=" + entityUrl;
+            URLEncoder.encode(access_token,
+                    "utf-8") + "&" + entityType + "=" + entityUrl;
   }
 
   private static void post(String api, String form) throws IOException {
