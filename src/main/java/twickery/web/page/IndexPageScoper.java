@@ -1,23 +1,20 @@
 package twickery.web.page;
 
-import java.util.regex.Matcher;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
 import com.google.common.base.Function;
-
-import com.sampullara.mustache.Scope;
 import redis.clients.jedis.Jedis;
 import twickery.web.Scoper;
 import twickery.web.Twickery;
-
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.User;
 import twitter4j.auth.AccessToken;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import java.util.regex.Matcher;
+
 public class IndexPageScoper implements Scoper<Matcher> {
-  public Scope newScope(HttpServletRequest httpServletRequest, final Matcher matcher) {
+  public Object newScope(HttpServletRequest httpServletRequest, final Matcher matcher) {
     String twitter = null;
     final Cookie[] cookies = httpServletRequest.getCookies();
     if (cookies != null) {
@@ -28,7 +25,7 @@ public class IndexPageScoper implements Scoper<Matcher> {
       }
     }
     if (twitter == null) {
-      return new Scope(new IndexPage(null));
+      return new IndexPage(null);
     } else {
       final String finalTwitter = twitter;
       final User user = Twickery.redis(new Function<Jedis, User>() {
@@ -36,7 +33,7 @@ public class IndexPageScoper implements Scoper<Matcher> {
           final Twitter t = Twickery.twitter();
           final String oauth_token = jedis.hget("twitter:uid:" + finalTwitter, "oauth_token");
           final String oauth_token_secret = jedis.hget("twitter:uid:" + finalTwitter,
-                  "oauth_token_secret");
+              "oauth_token_secret");
           if (oauth_token == null || oauth_token_secret == null) {
             return null;
           }
@@ -48,7 +45,7 @@ public class IndexPageScoper implements Scoper<Matcher> {
           }
         }
       });
-      return new Scope(new IndexPage(user));
+      return new IndexPage(user);
     }
   }
 }
