@@ -1,35 +1,34 @@
 package twickery.web;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.MappingJsonFactory;
+import redis.clients.jedis.Jedis;
+import redispatterns.queue.RedisQueue;
+import twitter4j.Status;
+import twitter4j.TwitterStream;
+import twitter4j.TwitterStreamFactory;
+import twitter4j.User;
+import twitter4j.auth.AccessToken;
+import twitter4j.conf.PropertyConfiguration;
+
+import javax.annotation.Nullable;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
-import com.google.common.base.Function;
-
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.MappingJsonFactory;
-import redis.clients.jedis.Jedis;
-
-import twitter4j.DirectMessage;
-import twitter4j.SiteStreamsListener;
-import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
-import twitter4j.TwitterStream;
-import twitter4j.TwitterStreamFactory;
-import twitter4j.User;
-import twitter4j.UserList;
-import twitter4j.auth.AccessToken;
-import twitter4j.conf.PropertyConfiguration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.net.URLEncoder.encode;
 import static twickery.web.Twickery.redis;
@@ -50,8 +49,11 @@ public class SiteStreams implements ServletContextListener {
 
   private static JsonFactory jf = new MappingJsonFactory();
   private static TwitterStream twitterStream;
+  private static ExecutorService es = Executors.newCachedThreadPool();
+  private static RedisQueue queue;
 
   public static void restart() {
+    System.out.println("Restarting connection to site stream");
     boolean started = false;
     do {
       stop();
@@ -82,10 +84,10 @@ public class SiteStreams implements ServletContextListener {
       throw new AssertionError("Couldn't load twitter4j.properties");
     }
     props.setProperty(PropertyConfiguration.SITE_STREAM_BASE_URL,
-            "https://sitestream.twitter.com/2b/");
+        "https://sitestream.twitter.com/2b/");
     TwitterStreamFactory tsf = new TwitterStreamFactory(new PropertyConfiguration(props));
     twitterStream = tsf.getInstance();
-    twitterStream.addListener(new SiteStreamsListener() {
+    twitterStream.addListener(new SiteStreamsBase() {
       public void onStatus(long l, final Status status) {
         System.out.print("onStatus" + " ");
         System.out.println(l + ": " + status);
@@ -112,16 +114,6 @@ public class SiteStreams implements ServletContextListener {
         }
       }
 
-      public void onDeletionNotice(long l, StatusDeletionNotice statusDeletionNotice) {
-        System.out.print("onDeletionNotice" + " ");
-        System.out.println(l + ": " + statusDeletionNotice);
-      }
-
-      public void onFriendList(long l, long[] longs) {
-        System.out.print("onFriendList" + " ");
-        System.out.println(l + ": " + Arrays.toString(longs));
-      }
-
       public void onFavorite(long l, final User source, User target, final Status status) {
         System.out.print("onFavorite" + " ");
         System.out.println(l + ": " + source + " " + target + " " + status);
@@ -142,11 +134,6 @@ public class SiteStreams implements ServletContextListener {
             }
           }
         });
-      }
-
-      public void onUnfavorite(long l, User user, User user1, Status status) {
-        System.out.print("onUnfavorite" + " ");
-        System.out.println(l + ": " + user + " " + user1 + " " + status);
       }
 
       public void onFollow(long l, final User source, final User target) {
@@ -171,74 +158,6 @@ public class SiteStreams implements ServletContextListener {
         });
       }
 
-      public void onUnfollow(long l, User user, User user1) {
-        System.out.print("onUnfollow" + " ");
-        System.out.println(l + ": " + user + " " + user1);
-      }
-
-      public void onDirectMessage(long l, DirectMessage directMessage) {
-        System.out.print("onDirectMessage" + " ");
-        System.out.println(l + ": " + directMessage);
-      }
-
-      public void onDeletionNotice(long l, long l1, long l2) {
-        System.out.print("onDeletionNotice" + " ");
-        System.out.println(l + ": " + l1 + ", " + l2);
-      }
-
-      public void onUserListMemberAddition(long l, User user, User user1, UserList userList) {
-        System.out.print("onUserListMemberAddition" + " ");
-        System.out.println(l + ": " + user + " " + user1 + " " + userList);
-      }
-
-      public void onUserListMemberDeletion(long l, User user, User user1, UserList userList) {
-        System.out.print("onUserListMemberDeletion" + " ");
-        System.out.println(l + ": " + user + " " + user1 + " " + userList);
-      }
-
-      public void onUserListSubscription(long l, User user, User user1, UserList userList) {
-        System.out.print("onUserListSubscription" + " ");
-        System.out.println(l + ": " + user + " " + user1 + " " + userList);
-      }
-
-      public void onUserListUnsubscription(long l, User user, User user1, UserList userList) {
-        System.out.print("onUserListUnsubscription" + " ");
-        System.out.println(l + ": " + user + " " + user1 + " " + userList);
-      }
-
-      public void onUserListCreation(long l, User user, UserList userList) {
-        System.out.print("onUserListCreation" + " ");
-        System.out.println(l + ": " + user + " " + userList);
-      }
-
-      public void onUserListUpdate(long l, User user, UserList userList) {
-        System.out.print("onUserListUpdate" + " ");
-        System.out.println(l + ": " + user + " " + userList);
-      }
-
-      public void onUserListDeletion(long l, User user, UserList userList) {
-        System.out.print("onUserListDeletion" + " ");
-        System.out.println(l + ": " + user + " " + userList);
-      }
-
-      public void onUserProfileUpdate(long l, User user) {
-        System.out.print("onUserProfileUpdate" + " ");
-        System.out.println(l + ": " + user);
-      }
-
-      public void onBlock(long l, User user, User user1) {
-        System.out.print("onBlock" + " ");
-        System.out.println(l + ": " + user + " " + user1);
-      }
-
-      public void onUnblock(long l, User user, User user1) {
-        System.out.print("onUnblock" + " ");
-        System.out.println(l + ": " + user + " " + user1);
-      }
-
-      public void onException(Exception e) {
-        e.printStackTrace();
-      }
     });
     final String[] auth = new String[2];
     Set<String> uids = redis(new Function<Jedis, Set<String>>() {
@@ -246,6 +165,37 @@ public class SiteStreams implements ServletContextListener {
         auth[0] = jedis.hget("twitter:uid:378853703", "oauth_token");
         auth[1] = jedis.hget("twitter:uid:378853703", "oauth_token_secret");
         return jedis.smembers("twitter:uids");
+      }
+    });
+    queue = new RedisQueue(Twickery.redisPool(), "twickery_queue");
+    es.submit(new Runnable() {
+      @Override
+      public void run() {
+        while (true) {
+          queue.pop(new Predicate<byte[]>() {
+            @Override
+            public boolean apply(@Nullable byte[] bytes) {
+              try {
+                String message = new String(bytes, Charsets.UTF_8);
+                int index = message.indexOf("?");
+                String api = message.substring(0, index);
+                String form = message.substring(index + 1);
+                URL url = new URL(api);
+                HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+                urlc.setDoOutput(true);
+                OutputStream outputStream = urlc.getOutputStream();
+                outputStream.write(form.getBytes("utf-8"));
+                outputStream.flush();
+                JsonNode jsonNode = jf.createJsonParser(urlc.getInputStream()).readValueAsTree();
+                System.out.println(jsonNode);
+                return true;
+              } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+              }
+            }            
+          });
+        }
       }
     });
     twitterStream.setOAuthAccessToken(new AccessToken(auth[0], auth[1]));
@@ -258,6 +208,12 @@ public class SiteStreams implements ServletContextListener {
     twitterStream.site(false, array);
   }
 
+  private static void post(String api, String form) throws IOException {
+    String message = api + "?" + form;
+    System.out.println(message);
+    queue.push(message.getBytes(Charsets.UTF_8));
+  }
+
   private static String tweet(Status status) throws UnsupportedEncodingException {
     return encode("http://www.twickery.com/tweet/" + status.getId(), "utf-8");
   }
@@ -268,20 +224,8 @@ public class SiteStreams implements ServletContextListener {
 
   private static String form(String access_token, String entityType, String entityUrl) throws UnsupportedEncodingException {
     return "access_token=" +
-            URLEncoder.encode(access_token,
-                    "utf-8") + "&" + entityType + "=" + entityUrl;
-  }
-
-  private static void post(String api, String form) throws IOException {
-    System.out.println(api + "?" + form);
-    URL url = new URL(api);
-    HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-    urlc.setDoOutput(true);
-    OutputStream outputStream = urlc.getOutputStream();
-    outputStream.write(form.getBytes("utf-8"));
-    outputStream.flush();
-    JsonNode jsonNode = jf.createJsonParser(urlc.getInputStream()).readValueAsTree();
-    System.out.println(jsonNode);
+        URLEncoder.encode(access_token,
+            "utf-8") + "&" + entityType + "=" + entityUrl;
   }
 
   public void contextDestroyed(ServletContextEvent servletContextEvent) {
