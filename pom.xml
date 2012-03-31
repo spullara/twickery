@@ -17,11 +17,18 @@
   </repositories>
 
   <dependencies>
-    <!-- Dotcloud -->
+    <!-- JSON -->
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>
       <version>1.5.2</version>
+    </dependency>
+
+    <!-- Jetty -->
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-webapp</artifactId>
+      <version>8.1.2.v20120308</version>
     </dependency>
 
     <!-- Authentication -->
@@ -42,7 +49,7 @@
     <dependency>
       <groupId>com.github.spullara.mustache.java</groupId>
       <artifactId>compiler</artifactId>
-      <version>0.6.3-SNAPSHOT</version>
+      <version>0.7.0-SNAPSHOT</version>
     </dependency>
 
     <!-- Provided -->
@@ -72,6 +79,33 @@
           <target>1.6</target>
           <encoding>UTF-8</encoding>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <archive>
+            <manifest>
+              <mainClass>twickery.web.Twickery</mainClass>
+            </manifest>
+          </archive>
+          <finalName>twickery</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>attached</goal>
+            </goals>
+          </execution>
+        </executions>
+
       </plugin>
     </plugins>
   </build>

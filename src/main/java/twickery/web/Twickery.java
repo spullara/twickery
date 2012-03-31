@@ -1,6 +1,5 @@
 package twickery.web;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -11,9 +10,10 @@ import com.google.common.base.Function;
 import com.google.common.io.CharStreams;
 
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.MappingJsonFactory;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.session.HashSessionManager;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
@@ -21,8 +21,6 @@ import sun.misc.BASE64Encoder;
 
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
-
-import static java.lang.Integer.parseInt;
 
 /**
  * Singleton representing the application
@@ -33,29 +31,6 @@ public class Twickery {
 
   private static TwitterFactory twitterFactory;
   public static String salt;
-
-  static {
-    try {
-      MappingJsonFactory jf = new MappingJsonFactory();
-      JsonParser parser = jf.createJsonParser(new File("/home/dotcloud/environment.json"));
-      JsonNode env = parser.readValueAsTree();
-      GenericObjectPool.Config config = new GenericObjectPool.Config();
-      String host = env.get("DOTCLOUD_DATA_REDIS_HOST").getTextValue();
-      int port = parseInt(env.get("DOTCLOUD_DATA_REDIS_PORT").getTextValue());
-      String password = env.get("DOTCLOUD_DATA_REDIS_PASSWORD").getTextValue();
-      config.testWhileIdle = true;
-      config.minEvictableIdleTimeMillis = 60000;
-      config.timeBetweenEvictionRunsMillis = 30000;
-      config.numTestsPerEvictionRun = -1;
-      pool = new JedisPool(config, host, port, 60, password);
-      twitterFactory = new TwitterFactory();
-      salt = CharStreams.readLines(
-              new InputStreamReader(Twickery.class.getResourceAsStream("/salt.txt"),
-                      "utf-8")).get(0);
-    } catch (IOException e) {
-      throw new AssertionError(e);
-    }
-  }
 
   public static Twitter twitter() {
     return twitterFactory.getInstance();
@@ -101,5 +76,28 @@ public class Twickery {
     byte[] digest = md.digest((data + ":" + salt).getBytes("utf-8"));
     BASE64Encoder b64e = new BASE64Encoder();
     return b64e.encode(digest).equals(hash);
+  }
+
+  public static void main(String[] args) throws Exception {
+    try {
+      GenericObjectPool.Config config = new GenericObjectPool.Config();
+      config.testWhileIdle = true;
+      config.minEvictableIdleTimeMillis = 60000;
+      config.timeBetweenEvictionRunsMillis = 30000;
+      config.numTestsPerEvictionRun = -1;
+      pool = new JedisPool(config, "localhost", 6379);
+      twitterFactory = new TwitterFactory();
+      salt = CharStreams.readLines(
+              new InputStreamReader(Twickery.class.getResourceAsStream("/salt.txt"),
+                      "utf-8")).get(0);
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
+    Server server = new Server(8080);
+    ServletHandler handler = new ServletHandler();
+    handler.addServletWithMapping(Router.class, "/*");
+    handler.setHandler(new SessionHandler(new HashSessionManager()));
+    server.setHandler(handler);
+    server.start();
   }
 }

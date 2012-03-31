@@ -1,6 +1,0 @@
-www:
-  type: java
-  approot: webapp
-
-data:
-  type: redis

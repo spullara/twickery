@@ -172,29 +172,33 @@ public class SiteStreams implements ServletContextListener {
       @Override
       public void run() {
         while (true) {
-          queue.pop(new Predicate<byte[]>() {
-            @Override
-            public boolean apply(@Nullable byte[] bytes) {
-              try {
-                String message = new String(bytes, Charsets.UTF_8);
-                int index = message.indexOf("?");
-                String api = message.substring(0, index);
-                String form = message.substring(index + 1);
-                URL url = new URL(api);
-                HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-                urlc.setDoOutput(true);
-                OutputStream outputStream = urlc.getOutputStream();
-                outputStream.write(form.getBytes("utf-8"));
-                outputStream.flush();
-                JsonNode jsonNode = jf.createJsonParser(urlc.getInputStream()).readValueAsTree();
-                System.out.println(jsonNode);
-                return true;
-              } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-              }
-            }            
-          });
+          try {
+            queue.pop(new Predicate<byte[]>() {
+              @Override
+              public boolean apply(@Nullable byte[] bytes) {
+                try {
+                  String message = new String(bytes, Charsets.UTF_8);
+                  int index = message.indexOf("?");
+                  String api = message.substring(0, index);
+                  String form = message.substring(index + 1);
+                  URL url = new URL(api);
+                  HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+                  urlc.setDoOutput(true);
+                  OutputStream outputStream = urlc.getOutputStream();
+                  outputStream.write(form.getBytes("utf-8"));
+                  outputStream.flush();
+                  JsonNode jsonNode = jf.createJsonParser(urlc.getInputStream()).readValueAsTree();
+                  System.out.println(jsonNode);
+                  return true;
+                } catch (IOException e) {
+                  e.printStackTrace();
+                  return false;
+                }
+              }            
+            });
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
         }
       }
     });
