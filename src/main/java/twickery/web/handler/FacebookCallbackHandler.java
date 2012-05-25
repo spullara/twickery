@@ -56,7 +56,7 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
       }
       String codeParam = request.getParameter("code");
       if (twitterId == null || codeParam == null) {
-        response.sendRedirect("http://www.twickery.com/twitter/connect");
+        response.sendRedirect("http://twickery.com/twitter/connect");
         return;
       }
 
@@ -64,7 +64,7 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
       URL url = new URL("https://graph.facebook.com/oauth/access_token" +
               "?client_id=" + fbprops.getProperty("client_id") +
               "&client_secret=" + fbprops.getProperty("client_secret") +
-              "&redirect_uri=" + encode("http://www.twickery.com/facebook/oauth", "utf-8") +
+              "&redirect_uri=" + encode("http://twickery.com/facebook/oauth", "utf-8") +
               "&code=" + code);
       String result = CharStreams.toString(
               new BufferedReader(new InputStreamReader(url.openStream(), "utf-8")));
@@ -92,7 +92,7 @@ public class FacebookCallbackHandler implements Handler<Matcher> {
       Cookie facebookCookie = new Cookie("facebook", userId + ":" + encode);
       facebookCookie.setMaxAge(_20_YEARS);
       response.addCookie(facebookCookie);
-      response.sendRedirect("http://www.twickery.com/");
+      response.sendRedirect("http://twickery.com/");
       SiteStreams.restart();
     } catch (Exception e) {
       throw new ServletException(e);

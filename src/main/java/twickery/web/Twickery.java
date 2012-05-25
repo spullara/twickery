@@ -97,6 +97,8 @@ public class Twickery {
     ServletHandler handler = new ServletHandler();
     handler.addServletWithMapping(Router.class, "/*");
     handler.setHandler(new SessionHandler(new HashSessionManager()));
+    SiteStreams siteStreams = new SiteStreams();
+    siteStreams.contextInitialized(null);
     server.setHandler(handler);
     server.start();
   }

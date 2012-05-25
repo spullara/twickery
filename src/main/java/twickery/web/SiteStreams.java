@@ -219,11 +219,11 @@ public class SiteStreams implements ServletContextListener {
   }
 
   private static String tweet(Status status) throws UnsupportedEncodingException {
-    return encode("http://www.twickery.com/tweet/" + status.getId(), "utf-8");
+    return encode("http://twickery.com/tweet/" + status.getId(), "utf-8");
   }
 
   private static String user(User user) throws UnsupportedEncodingException {
-    return encode("http://www.twickery.com/user/" + user.getScreenName(), "utf-8");
+    return encode("http://twickery.com/user/" + user.getScreenName(), "utf-8");
   }
 
   private static String form(String access_token, String entityType, String entityUrl) throws UnsupportedEncodingException {
