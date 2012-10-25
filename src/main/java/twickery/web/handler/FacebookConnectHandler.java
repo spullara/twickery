@@ -26,11 +26,11 @@ public class FacebookConnectHandler implements Handler<Matcher> {
         }
       }
       if (twitter) {
-        String url = URLEncoder.encode("http://www.twickery.com/facebook/oauth", "utf-8");
+        String url = URLEncoder.encode("http://twickery.com/facebook/oauth", "utf-8");
         response.sendRedirect(
                 "https://www.facebook.com/dialog/oauth?client_id=171266056289639&scope=publish_actions,offline_access&redirect_uri=" + url);
       } else {
-        response.sendRedirect("http://www.twickery.com/twitter/connect");
+        response.sendRedirect("http://twickery.com/twitter/connect");
       }
     } catch (Exception e) {
       throw new ServletException(e);

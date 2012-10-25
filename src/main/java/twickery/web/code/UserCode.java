@@ -18,7 +18,7 @@ public class UserCode {
   }
 
   String image() {
-    return user.getProfileImageURL().toString().replace("normal", "reasonably_small");
+    return user.getProfileImageURL().toString();
   }
 
   String description() {
