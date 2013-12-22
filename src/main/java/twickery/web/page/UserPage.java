@@ -1,25 +1,25 @@
 package twickery.web.page;
 
-import java.util.regex.Matcher;
-
-import twickery.web.code.StatusCode;
 import twickery.web.code.UserCode;
-
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
-import static java.lang.Long.parseLong;
-
 public class UserPage {
   private final Twitter twitter;
-  private final Matcher matcher;
+  private final String userId;
+  private final String sourceId;
 
-  public UserPage(Twitter twitter, Matcher matcher) {
+  public UserPage(Twitter twitter, String userId, String sourceId) {
     this.twitter = twitter;
-    this.matcher = matcher;
+    this.userId = userId;
+    this.sourceId = sourceId;
   }
 
   Object user() throws TwitterException {
-    return new UserCode(twitter.showUser(matcher.group(1)));
+    return new UserCode(twitter.showUser(userId));
+  }
+
+  String source_user() {
+    return sourceId;
   }
 }

@@ -29,7 +29,7 @@ public class TwitterCallbackHandler implements Handler<Matcher> {
     String verifier = request.getParameter("oauth_verifier");
     try {
       if (verifier == null || requestToken == null) {
-        response.sendRedirect("http://www.twickery.com/");
+        response.sendRedirect("http://twickery.com/");
         return;
       }
       final AccessToken token = twitter.getOAuthAccessToken(requestToken, verifier);
@@ -50,7 +50,7 @@ public class TwitterCallbackHandler implements Handler<Matcher> {
       twitterCookie.setMaxAge(_20_YEARS);
       twitterCookie.setPath("/");
       response.addCookie(twitterCookie);
-      response.sendRedirect("http://www.twickery.com/facebook/connect");
+      response.sendRedirect("http://twickery.com/facebook/connect");
     } catch (Exception e) {
       throw new ServletException(e);
     }

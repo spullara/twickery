@@ -1,9 +1,6 @@
 package twickery.web.page;
 
-import java.util.regex.Matcher;
-
 import twickery.web.code.StatusCode;
-
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
@@ -18,14 +15,20 @@ import static java.lang.Long.parseLong;
 */
 public class TweetPage {
   private final Twitter twitter;
-  private final Matcher matcher;
+  private final String tweetId;
+  private final String sourceId;
 
-  public TweetPage(Twitter twitter, Matcher matcher) {
+  public TweetPage(Twitter twitter, String tweetId, String sourceId) {
     this.twitter = twitter;
-    this.matcher = matcher;
+    this.tweetId = tweetId;
+    this.sourceId = sourceId;
   }
 
   Object tweet() throws TwitterException {
-    return new StatusCode(twitter.showStatus(parseLong(matcher.group(1))));
+    return new StatusCode(twitter.showStatus(parseLong(tweetId)));
+  }
+
+  String source_user() {
+    return sourceId;
   }
 }

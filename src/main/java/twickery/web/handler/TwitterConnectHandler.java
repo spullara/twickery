@@ -16,7 +16,7 @@ public class TwitterConnectHandler implements Handler<Matcher> {
     Twitter twitter = Twickery.twitter();
     RequestToken requestToken;
     try {
-      requestToken = twitter.getOAuthRequestToken("http://www.twickery.com/twitter/oauth");
+      requestToken = twitter.getOAuthRequestToken("http://twickery.com/twitter/oauth");
       request.getSession().setAttribute("requestToken", requestToken);
       response.sendRedirect(requestToken.getAuthenticationURL());
     } catch (Exception e) {

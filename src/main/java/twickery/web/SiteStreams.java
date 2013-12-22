@@ -15,7 +15,6 @@ import twitter4j.User;
 import twitter4j.auth.AccessToken;
 import twitter4j.conf.PropertyConfiguration;
 
-import javax.annotation.Nullable;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.io.IOException;
@@ -101,7 +100,7 @@ public class SiteStreams implements ServletContextListener {
                 if (facebookId != null) {
                   String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
                   if (access_token != null) {
-                    post(RETWEET_ACTION, form(access_token, TWEET_OBJECT, tweet(retweetedStatus)));
+                    post(RETWEET_ACTION, form(access_token, TWEET_OBJECT, tweet(source, retweetedStatus)));
                   }
                 }
                 return null;
@@ -124,7 +123,7 @@ public class SiteStreams implements ServletContextListener {
               if (facebookId != null) {
                 String access_token = jedis.hget("facebook:uid:" + facebookId, "access_token");
                 if (access_token != null) {
-                  post(FAVORITE_ACTION, form(access_token, TWEET_OBJECT, tweet(status)));
+                  post(FAVORITE_ACTION, form(access_token, TWEET_OBJECT, tweet(source.getId(), status)));
                 }
               }
               return null;
@@ -158,6 +157,10 @@ public class SiteStreams implements ServletContextListener {
         });
       }
 
+      @Override
+      public void onDisconnectionNotice(String s) {
+        System.out.println("Disconnected: " + s);
+      }
     });
     final String[] auth = new String[2];
     Set<String> uids = redis(new Function<Jedis, Set<String>>() {
@@ -175,7 +178,7 @@ public class SiteStreams implements ServletContextListener {
           try {
             queue.pop(new Predicate<byte[]>() {
               @Override
-              public boolean apply(@Nullable byte[] bytes) {
+              public boolean apply(byte[] bytes) {
                 try {
                   String message = new String(bytes, Charsets.UTF_8);
                   int index = message.indexOf("?");
@@ -218,8 +221,8 @@ public class SiteStreams implements ServletContextListener {
     queue.push(message.getBytes(Charsets.UTF_8));
   }
 
-  private static String tweet(Status status) throws UnsupportedEncodingException {
-    return encode("http://twickery.com/tweet/" + status.getId(), "utf-8");
+  private static String tweet(long source, Status status) throws UnsupportedEncodingException {
+    return encode("http://twickery.com/tweet/" + source + "/" + status.getId(), "utf-8");
   }
 
   private static String user(User user) throws UnsupportedEncodingException {
@@ -237,6 +240,8 @@ public class SiteStreams implements ServletContextListener {
   }
 
   private static void stop() {
-    twitterStream.shutdown();
+    if (twitterStream != null) {
+      twitterStream.shutdown();
+    }
   }
 }

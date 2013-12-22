@@ -1,14 +1,7 @@
 package twickery.web;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 import com.google.common.base.Function;
 import com.google.common.io.CharStreams;
-
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.session.HashSessionManager;
@@ -18,9 +11,14 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 import sun.misc.BASE64Encoder;
-
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Singleton representing the application
@@ -93,6 +91,7 @@ public class Twickery {
     } catch (IOException e) {
       throw new AssertionError(e);
     }
+    SiteStreams.restart();
     Server server = new Server(8080);
     ServletHandler handler = new ServletHandler();
     handler.addServletWithMapping(Router.class, "/*");

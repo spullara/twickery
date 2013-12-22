@@ -1,13 +1,14 @@
 package twickery.web.page;
 
-import twickery.web.Scoper;
-import twickery.web.Twickery;
+import twitter4j.Twitter;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.regex.Matcher;
 
-public class TweetPageScoper implements Scoper<Matcher> {
+public class TweetPageScoper extends BasePageScoper {
   public Object newScope(HttpServletRequest httpServletRequest, final Matcher matcher) {
-    return new TweetPage(Twickery.twitter(), matcher);
+    String sourceId = matcher.group(1);
+    Twitter twitter = getTwitter(sourceId);
+    return new TweetPage(twitter, matcher.group(2), sourceId);
   }
 }
